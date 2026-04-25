@@ -1,6 +1,6 @@
 # AJAS — AI-Powered Job Application System
 
-A free, private, local-first job search and application assistant powered by Claude AI and JSearch.
+A free, private, local-first job search and application assistant powered by Claude AI and JSearch but built with Python and Flask.
 
 ---
 
