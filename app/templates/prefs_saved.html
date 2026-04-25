@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Preferences Updated</h2>
+<div class="sub">Your job preferences have been saved successfully.</div>
+
+<div class="card">
+  <div class="card-label">Updated Profile</div>
+  {% for label, key in [("Role","role_title"),("Location","location"),
+    ("Salary","salary_range"),("Work Type","work_type")] %}
+  <div class="prow">
+    <span class="pk">{{ label }}</span>
+    <span class="pv">{{ cfg.get(key,"—") }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card" style="border-color:var(--warn);">
+  <div class="card-label" style="color:var(--warn);">
+    Action Required — Update Your Claude Project
+  </div>
+  <p style="color:var(--fg2);font-size:13px;line-height:1.6;margin-bottom:16px;">
+    Your preferences have changed. Claude will not know about these changes
+    until you update your Project. Complete all three steps below:
+  </p>
+
+  <div style="counter-reset:steps;">
+
+    <div style="display:flex;gap:12px;padding:10px 0;
+                border-bottom:1px solid var(--border);">
+      <span style="background:var(--acc);color:#fff;font-size:11px;
+                   font-weight:800;border-radius:5px;padding:3px 9px;
+                   flex-shrink:0;height:fit-content;">1</span>
+      <div>
+        <p style="font-size:13px;font-weight:700;color:var(--fg);
+                  margin-bottom:3px;">Update Project Instructions</p>
+        <p style="font-size:12px;color:var(--mut);line-height:1.6;">
+          Click <strong style="color:var(--fg);">View Instructions</strong> below.
+          Select all
+          (<strong>Cmd+A</strong> on Mac &bull; <strong>Ctrl+A</strong> on Windows),
+          copy, then paste into your Claude Project
+          <strong style="color:var(--fg);">Instructions</strong> field and save.
+        </p>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;padding:10px 0;
+                border-bottom:1px solid var(--border);">
+      <span style="background:var(--acc);color:#fff;font-size:11px;
+                   font-weight:800;border-radius:5px;padding:3px 9px;
+                   flex-shrink:0;height:fit-content;">2</span>
+      <div>
+        <p style="font-size:13px;font-weight:700;color:var(--fg);
+                  margin-bottom:3px;">Re-upload your CV to the Project</p>
+        <p style="font-size:12px;color:var(--mut);line-height:1.6;">
+          In your Claude Project, find the
+          <strong style="color:var(--fg);">Files</strong> section
+          (paperclip or &ldquo;Add files&rdquo; button) and upload your CV
+          so Claude always has the latest version.
+          <br>CV location:
+          <span style="font-family:monospace;font-size:11px;color:var(--acc2);">
+            {{ cfg.get('cv_path', 'Your AJAS folder › My CV') }}
+          </span>
+        </p>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;padding:10px 0;">
+      <span style="background:var(--acc);color:#fff;font-size:11px;
+                   font-weight:800;border-radius:5px;padding:3px 9px;
+                   flex-shrink:0;height:fit-content;">3</span>
+      <div>
+        <p style="font-size:13px;font-weight:700;color:var(--fg);
+                  margin-bottom:3px;">Verify in Claude</p>
+        <p style="font-size:12px;color:var(--mut);line-height:1.6;">
+          Open your Claude Project and confirm the instructions show
+          your updated role and preferences at the top.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="row" style="margin-top:14px;">
+    <a href="https://claude.ai" target="_blank"
+       class="btn" style="margin-top:0;">Open Claude &rarr;</a>
+    <a href="/instructions/view" target="_blank"
+       class="btn btn-ghost" style="margin-top:0;">View Instructions</a>
+  </div>
+</div>
+
+<a href="/dashboard" class="btn">Go to Dashboard &rarr;</a>
+{% endblock %}

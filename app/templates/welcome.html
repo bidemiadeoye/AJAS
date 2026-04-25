@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Welcome to AJAS</h2>
+<div class="sub">Setup takes about 5 minutes and only needs to be done once.</div>
+<div class="card">
+  <div class="card-label">Before you begin, please have ready</div>
+  <div class="chk"><span class="ok">&#10003;</span><span>Your CV as a <strong>.docx or .pdf</strong> file</span></div>
+  <div class="chk"><span class="ok">&#10003;</span><span>A Claude account at <strong>claude.ai</strong> — free is fine</span></div>
+</div>
+<a href="/folder" class="btn">Begin Setup &rarr;</a>
+<a href="/back/welcome" class="btn-back">&larr; Back to System Check</a>
+{% endblock %}

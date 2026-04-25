@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Job Search Setup</h2>
+<div class="sub">
+  AJAS uses JSearch to find jobs from LinkedIn, Indeed, Glassdoor, Google Jobs,
+  and more — covering any city in any country. It is completely free.
+</div>
+
+<div class="card">
+  <div class="card-label">Step 1 — Create a free RapidAPI account</div>
+  <p style="color:var(--mut);font-size:13px;line-height:1.6;margin-bottom:12px;">
+    JSearch runs on RapidAPI. Click below to sign up for a free account.
+    No credit card required.
+  </p>
+  <a href="https://rapidapi.com/auth/sign-up" target="_blank"
+     class="btn" style="margin-top:0;">Sign up at RapidAPI &rarr;</a>
+</div>
+
+<div class="card">
+  <div class="card-label">Step 2 — Subscribe to JSearch (free)</div>
+  <p style="color:var(--mut);font-size:13px;line-height:1.6;margin-bottom:12px;">
+    After signing in, open the JSearch API page and click
+    <strong>Subscribe to Test</strong>. Select the
+    <strong>Basic plan — it is free</strong> and gives you
+    200 searches per month.
+  </p>
+  <a href="https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch"
+     target="_blank" class="btn btn-ghost" style="margin-top:0;">
+    Open JSearch on RapidAPI &rarr;
+  </a>
+</div>
+
+<div class="card">
+  <div class="card-label">Step 3 — Find your API key</div>
+  <p style="color:var(--mut);font-size:13px;line-height:1.6;">
+    On the JSearch page, scroll down to the <strong>Code Snippet</strong>
+    section. You will see a line labelled
+    <strong>"X-RapidAPI-Key"</strong> with a long string of letters and
+    numbers. That is your key. Copy it exactly.
+  </p>
+</div>
+
+{% if error %}
+<div class="err-box">
+  {{ error }}
+  <p style="margin-top:8px;font-size:12px;">
+    Make sure you have subscribed to the JSearch Basic plan and copied
+    the full key with no extra spaces.
+  </p>
+</div>
+{% endif %}
+
+<form method="POST" action="/search/setup">
+  <div class="card">
+    <div class="card-label">Step 4 — Paste your API key</div>
+    <label>RapidAPI Key (X-RapidAPI-Key)</label>
+    <input type="text" name="app_id"
+           value="{{ saved_id or '' }}"
+           placeholder="Paste your key here"
+           autocomplete="off" spellcheck="false">
+    <p style="color:var(--mut);font-size:11px;margin-top:10px;">
+      Saved only on your computer. Never shared with anyone.
+    </p>
+  </div>
+  <button class="btn" type="submit">Save &amp; Start Searching &rarr;</button>
+</form>
+
+<a href="/dashboard" class="btn-back">&larr; Back to Dashboard</a>
+{% endblock %}

@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+.tracker-card{background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:16px 18px;margin-bottom:10px;transition:border .15s;}
+.tracker-card:hover{border-color:var(--acc);}
+.tc-header{display:flex;justify-content:space-between;
+  align-items:flex-start;margin-bottom:8px;gap:12px;}
+.tc-title{font-size:14px;font-weight:700;}
+.tc-company{font-size:12px;color:var(--mut);margin-top:2px;}
+.tc-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.tag{background:var(--bg);border:1px solid var(--border);border-radius:4px;
+  font-size:11px;padding:2px 8px;color:var(--mut);}
+.status-badge{display:inline-block;padding:3px 10px;border-radius:4px;
+  font-size:11px;font-weight:700;flex-shrink:0;}
+.Applied{background:#0f2a1a;color:#4ade80;}
+.Screening{background:#1a1f2a;color:#60a5fa;}
+.Interview{background:#1a2a1a;color:#a3e635;}
+.Assessment{background:#2a1a1a;color:#fb923c;}
+.Final\ Round{background:#1a1a2a;color:#c084fc;}
+.Offer{background:#0a2a0a;color:#4ade80;border:1px solid #4ade80;}
+.Rejected{background:#2a0a0a;color:#f87171;}
+.Withdrawn{background:#1a1a1a;color:var(--mut);}
+.update-form{background:var(--bg);border:1px solid var(--border);
+  border-radius:8px;padding:12px 14px;margin-top:8px;display:none;}
+.update-form.open{display:block;}
+.update-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.empty-state{text-align:center;padding:48px 20px;}
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.filter-btn{background:var(--card);border:1px solid var(--border);
+  border-radius:6px;padding:5px 12px;font-size:12px;color:var(--mut);
+  cursor:pointer;transition:all .15s;}
+.filter-btn.active,.filter-btn:hover{border-color:var(--acc);color:var(--fg);}
+</style>
+{% endblock %}
+{% block content %}
+<h2>Application Tracker</h2>
+<div class="sub">All your job applications in one place.</div>
+
+{% if request.args.get('updated') %}
+<div class="ok-box">&#10003; Status updated for {{ request.args.get('updated') }}</div>
+{% endif %}
+
+{% if entries %}
+<!-- Summary counts -->
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-label">Summary</div>
+  <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:4px;">
+    {% set statuses = entries | map(attribute='Status') | list %}
+    {% for status, color in [
+      ('Applied','#4ade80'),('Screening','#60a5fa'),
+      ('Interview','#a3e635'),('Assessment','#fb923c'),
+      ('Final Round','#c084fc'),('Offer','#4ade80'),
+      ('Rejected','#f87171'),('Withdrawn','var(--mut)')] %}
+    {% set count = statuses | select('equalto', status) | list | length %}
+    {% if count > 0 %}
+    <div style="text-align:center;">
+      <div style="font-size:20px;font-weight:800;color:{{ color }};">
+        {{ count }}
+      </div>
+      <div style="font-size:11px;color:var(--mut);">{{ status }}</div>
+    </div>
+    {% endif %}
+    {% endfor %}
+    <div style="text-align:center;">
+      <div style="font-size:20px;font-weight:800;color:var(--fg);">
+        {{ entries|length }}
+      </div>
+      <div style="font-size:11px;color:var(--mut);">Total</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter bar -->
+<div class="filter-bar" id="filterBar">
+  <button class="filter-btn active" onclick="filterCards('all',this)">
+    All ({{ entries|length }})
+  </button>
+  {% for status in ['Applied','Screening','Interview','Assessment',
+                    'Final Round','Offer','Rejected','Withdrawn'] %}
+  {% set count = entries | selectattr('Status','equalto',status) | list | length %}
+  {% if count > 0 %}
+  <button class="filter-btn" onclick="filterCards('{{ status }}',this)">
+    {{ status }} ({{ count }})
+  </button>
+  {% endif %}
+  {% endfor %}
+</div>
+
+<div id="cardContainer">
+{% for e in entries %}
+<div class="tracker-card" data-status="{{ e.get('Status','') }}"
+     id="card-{{ loop.index }}">
+  <div class="tc-header">
+    <div>
+      <div class="tc-title">{{ e.get('Role','—') }}</div>
+      <div class="tc-company">{{ e.get('Company','—') }}</div>
+    </div>
+    <span class="status-badge {{ e.get('Status','').replace(' ','\ ') }}">
+      {{ e.get('Status','—') }}
+    </span>
+  </div>
+  <div class="tc-meta">
+    {% if e.get('Date Applied') %}
+    <span class="tag">&#128197; {{ e.get('Date Applied') }}</span>{% endif %}
+    {% if e.get('Location') %}
+    <span class="tag">&#128205; {{ e.get('Location') }}</span>{% endif %}
+    {% if e.get('Work Type') %}
+    <span class="tag">{{ e.get('Work Type') }}</span>{% endif %}
+    {% if e.get('Salary') %}
+    <span class="tag">&#128176; {{ e.get('Salary') }}</span>{% endif %}
+  </div>
+  {% if e.get('Notes') %}
+  <p style="font-size:12px;color:var(--mut);margin-bottom:10px;
+            line-height:1.5;">{{ e.get('Notes') }}</p>
+  {% endif %}
+  {% if e.get('Application URL') %}
+  <a href="{{ e.get('Application URL') }}" target="_blank"
+     style="font-size:12px;color:var(--acc);">
+    View job posting &rarr;
+  </a>
+  {% endif %}
+
+  <!-- Update status toggle -->
+  <button onclick="toggleUpdate('upd-{{ loop.index }}')"
+          style="background:transparent;border:1px solid var(--border);
+                 color:var(--mut);border-radius:6px;padding:6px 12px;
+                 font-size:12px;cursor:pointer;margin-top:10px;
+                 display:block;">
+    &#9881; Update Status
+  </button>
+
+  <div class="update-form" id="upd-{{ loop.index }}">
+    <form method="POST" action="/tracker/update">
+      <input type="hidden" name="title"   value="{{ e.get('Role','') }}">
+      <input type="hidden" name="company" value="{{ e.get('Company','') }}">
+      <input type="hidden" name="source"  value="tracker">
+      <div class="update-grid">
+        <div>
+          <label style="margin-top:0;">New Status</label>
+          <select name="status" required>
+            <option value="">Select...</option>
+            {% for s in ['Applied','Screening','Interview','Assessment',
+                         'Final Round','Offer','Rejected','Withdrawn'] %}
+            <option value="{{ s }}"
+              {% if e.get('Status') == s %}selected{% endif %}>
+              {{ s }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label style="margin-top:0;">Date</label>
+          <input type="date" name="status_date"
+                 value="{{ today }}">
+        </div>
+      </div>
+      <label>Notes</label>
+      <input type="text" name="notes"
+             placeholder="e.g. Interview scheduled for Thursday">
+      <button class="btn" type="submit"
+              style="padding:9px;font-size:13px;margin-top:10px;">
+        Save Update
+      </button>
+    </form>
+  </div>
+</div>
+{% endfor %}
+</div>
+
+<div style="margin-top:12px;">
+  <button onclick="openTracker()"
+          style="background:transparent;border:1px solid var(--border);
+                 color:var(--mut);border-radius:8px;padding:10px 20px;
+                 font-size:13px;cursor:pointer;font-weight:700;width:100%;">
+    &#128196; Open Excel Tracker File
+  </button>
+</div>
+
+{% else %}
+<div class="empty-state">
+  <div style="font-size:40px;margin-bottom:12px;">&#128202;</div>
+  <p style="color:var(--mut);font-size:14px;">No applications logged yet.</p>
+  <p style="color:var(--mut);font-size:13px;margin-top:6px;">
+    Applications you confirm on the apply screen will appear here.
+  </p>
+</div>
+{% endif %}
+
+<a href="/dashboard" class="btn-back">&larr; Back to Dashboard</a>
+{% endblock %}
+{% block scripts %}
+<script>
+// Set today's date on all date inputs
+document.addEventListener("DOMContentLoaded", function() {
+  const today = new Date().toISOString().split("T")[0];
+  document.querySelectorAll('input[type=date]').forEach(d => {
+    if (!d.value) d.value = today;
+  });
+});
+
+function toggleUpdate(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle("open");
+}
+
+function filterCards(status, btn) {
+  document.querySelectorAll(".filter-btn").forEach(b =>
+    b.classList.remove("active"));
+  btn.classList.add("active");
+  document.querySelectorAll(".tracker-card").forEach(card => {
+    const match = status === "all" ||
+                  card.dataset.status === status;
+    card.style.display = match ? "" : "none";
+  });
+}
+
+function openTracker() {
+  fetch("/apply/open_tracker").catch(()=>{});
+}
+</script>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+.dash-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:10px;
+}
+.dash-grid .act{margin-bottom:0;}
+/* Primary button spans full width */
+.act-full{grid-column:1/-1;}
+@media(max-width:480px){
+  .dash-grid{grid-template-columns:1fr;}
+  .act-full{grid-column:1;}
+}
+</style>
+{% endblock %}
+{% block content %}
+<h2>Dashboard</h2>
+<div class="sub">Your AJAS workspace is ready.</div>
+
+<div class="card" style="margin-bottom:18px;">
+  <div class="card-label">Your Profile</div>
+  {% for label, key in [("Role","role_title"),("Location","location"),
+    ("Salary","salary_range"),("Work Type","work_type"),("CV","cv_filename")] %}
+  <div class="prow">
+    <span class="pk">{{ label }}</span>
+    <span class="pv">{{ cfg.get(key,"—") }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Search spans full width - primary action -->
+<div class="dash-grid">
+  <a href="/search" class="act pri act-full">
+    <span class="act-ico">&#128269;</span>
+    <span class="act-txt">
+      <strong>Search for Jobs</strong>
+      <span>Find live openings matching your role and location</span>
+    </span>
+  </a>
+
+  <a href="/tracker" class="act">
+    <span class="act-ico">&#128202;</span>
+    <span class="act-txt">
+      <strong>Application Tracker</strong>
+      <span>View and update all applications</span>
+    </span>
+  </a>
+
+  <a href="/dashboard/open_claude" class="act">
+    <span class="act-ico">&#129302;</span>
+    <span class="act-txt">
+      <strong>Open Claude Project</strong>
+      <span>CV review, tailoring, cover letters</span>
+    </span>
+  </a>
+
+  <a href="/dashboard/open_folder" class="act">
+    <span class="act-ico">&#128193;</span>
+    <span class="act-txt">
+      <strong>AJAS Files Folder</strong>
+      <span>CVs, job lists, cover letters</span>
+    </span>
+  </a>
+
+  <a href="/dashboard/update_prefs" class="act">
+    <span class="act-ico">&#9881;</span>
+    <span class="act-txt">
+      <strong>Job Preferences</strong>
+      <span>Role, location, salary, work type</span>
+    </span>
+  </a>
+
+  <a href="/dashboard/update_cv" class="act">
+    <span class="act-ico">&#128196;</span>
+    <span class="act-txt">
+      <strong>Update CV</strong>
+      <span>Replace your master CV</span>
+    </span>
+  </a>
+
+  <a href="/dashboard/reset" class="act">
+    <span class="act-ico">&#128257;</span>
+    <span class="act-txt">
+      <strong>New Job Search</strong>
+      <span>Clear and search a different role</span>
+    </span>
+  </a>
+
+  <a href="/settings" class="act">
+    <span class="act-ico">&#128295;</span>
+    <span class="act-txt">
+      <strong>Settings</strong>
+      <span>API key, Claude URL, config</span>
+    </span>
+  </a>
+</div>
+{% endblock %}

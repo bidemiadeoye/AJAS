@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+.step-block{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:20px 22px;margin-bottom:12px;
+  transition:border-color .2s;
+}
+.step-block.active{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-glow);}
+.step-block.done{border-color:var(--ok);}
+.step-num{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;
+  background:linear-gradient(135deg,var(--acc),#4f5de8);
+  color:#fff;border-radius:50%;font-size:11px;font-weight:800;
+  margin-right:10px;flex-shrink:0;
+  box-shadow:0 2px 8px rgba(91,110,245,.3);
+}
+.step-title{
+  font-size:14px;font-weight:700;display:flex;
+  align-items:center;margin-bottom:12px;color:var(--fg);
+}
+.copy-box{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-s);padding:14px 16px;
+  font-size:12px;color:var(--fg2);line-height:1.8;
+  white-space:pre-wrap;word-break:break-word;
+  max-height:180px;overflow-y:auto;margin-bottom:12px;
+  font-family:monospace;
+  scrollbar-width:thin;scrollbar-color:var(--border2) transparent;
+}
+.copy-btn{
+  background:linear-gradient(135deg,var(--acc),#4f5de8);
+  color:#fff;border:none;border-radius:var(--radius-s);
+  padding:9px 20px;font-size:13px;font-weight:700;
+  cursor:pointer;transition:opacity .15s,transform .1s;
+  box-shadow:0 2px 10px rgba(91,110,245,.3);
+  font-family:var(--font);
+}
+.copy-btn:hover{opacity:.88;transform:translateY(-1px);}
+.copy-btn.done{background:linear-gradient(135deg,var(--ok),#16a34a);}
+.profile-row{
+  display:flex;align-items:center;padding:9px 6px;
+  border-bottom:1px solid var(--border);cursor:pointer;
+  border-radius:6px;transition:background .15s;
+}
+.profile-row:last-child{border-bottom:none;}
+.profile-row:hover{background:rgba(91,110,245,.06);}
+.profile-row:hover .ctag{opacity:1;}
+.pk2{width:140px;font-weight:600;color:var(--mut);font-size:11px;
+  text-transform:uppercase;letter-spacing:.3px;flex-shrink:0;}
+.pv2{font-size:13px;flex:1;color:var(--fg);}
+.ctag{opacity:0;font-size:11px;color:var(--acc2);margin-left:8px;
+  transition:opacity .15s;font-weight:600;}
+.save-result{
+  display:none;background:var(--ok-bg);border:1px solid var(--ok);
+  border-radius:var(--radius-s);padding:14px 16px;margin-top:12px;
+}
+.save-result.show{display:block;}
+.save-result p{color:var(--ok);font-weight:700;margin-bottom:8px;}
+.save-result ul{color:var(--fg2);font-size:12px;padding-left:16px;
+  line-height:1.9;font-family:monospace;}
+.err-inline{
+  display:none;color:var(--err);font-size:12px;margin-top:8px;
+}
+.err-inline.show{display:block;}
+.attach-notice{
+  background:rgba(91,110,245,.08);border:1px solid var(--acc);
+  border-radius:var(--radius-s);padding:12px 16px;
+  font-size:13px;margin-bottom:16px;line-height:1.6;
+}
+.attach-notice strong{color:var(--acc2);}
+.review-note{
+  background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.3);
+  border-radius:var(--radius-s);padding:10px 14px;
+  font-size:12px;color:var(--warn);margin-top:10px;line-height:1.5;
+}
+.path-display{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:6px;padding:8px 12px;font-size:11px;
+  color:var(--mut);word-break:break-all;margin-top:4px;
+  font-family:monospace;line-height:1.6;
+}
+</style>
+{% endblock %}
+{% block content %}
+<h2>{{ title }}</h2>
+<div class="sub">{{ company }}</div>
+
+<!-- Step 1: Copy prompt to Claude -->
+<div class="step-block active" id="step1">
+  <div class="step-title">
+    <span class="step-num">1</span>
+    Tailor your CV with Claude
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border2);
+              border-radius:var(--radius-s);padding:14px 16px;margin-bottom:16px;">
+    <p style="font-size:13px;color:var(--fg);line-height:1.8;">
+      <strong>1.</strong> Click <strong>Copy Prompt</strong> below<br>
+      <strong>2.</strong> Open your Claude Project &rarr;
+        <a href="/dashboard/open_claude" target="_blank"
+           style="color:var(--acc2);">Open Claude Project &rarr;</a><br>
+      <strong>3.</strong> Click the <strong>chat text box</strong> inside your
+        Claude Project and paste
+        (<strong>Cmd+V</strong> on Mac &bull; <strong>Ctrl+V</strong> on Windows)<br>
+      <strong>4.</strong> Press <strong>Enter</strong> to send —
+        Claude will respond with your fit assessment, tailored CV,
+        and cover letter in one message<br>
+      <strong>5.</strong> Come back here and paste the results into the
+        boxes in <strong>Step 2</strong>
+    </p>
+  </div>
+  <div class="copy-box" id="claudePrompt">{{ claude_prompt }}</div>
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+    <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">
+      &#128203; Copy Prompt
+    </button>
+    <a href="/dashboard/open_claude" target="_blank"
+       style="color:var(--acc2);font-size:13px;font-weight:600;">
+      Open Claude Project &rarr;
+    </a>
+  </div>
+</div>
+
+<!-- Step 2: Paste tailored documents -->
+<div class="step-block" id="step2">
+  <div class="step-title">
+    <span class="step-num">2</span>
+    Paste your tailored documents here
+  </div>
+  <p style="color:var(--mut);font-size:13px;line-height:1.6;margin-bottom:14px;">
+    Copy the <strong style="color:var(--fg);">TAILORED CV</strong> text from Claude
+    and paste below. Then copy the
+    <strong style="color:var(--fg);">COVER LETTER</strong> text and paste below.
+    AJAS will save both as Word documents automatically.
+  </p>
+
+  <div class="review-note">
+    &#9888;&nbsp; <strong>Review before saving.</strong>
+    Read through Claude's output carefully. You can edit the text directly
+    in the boxes below before clicking Save.
+  </div>
+
+  <label style="margin-top:14px;">Tailored CV</label>
+  <textarea id="cvText" name="cv_text"
+    placeholder="Paste your tailored CV text from Claude here..."></textarea>
+  <div style="font-size:11px;color:var(--mut);margin-top:4px;">
+    Will be saved to: <span style="font-family:monospace;color:var(--acc2);">
+    {{ cv_save_path }}</span>
+  </div>
+
+  <label style="margin-top:14px;">Cover Letter</label>
+  <textarea id="clText" name="cl_text"
+    placeholder="Paste your cover letter text from Claude here..."></textarea>
+  <div style="font-size:11px;color:var(--mut);margin-top:4px;">
+    Will be saved to: <span style="font-family:monospace;color:var(--acc2);">
+    {{ cl_save_path }}</span>
+  </div>
+
+  <button class="copy-btn" id="saveBtn"
+          onclick="saveDocs()" style="margin-top:16px;">
+    &#128190; Save as Word Documents
+  </button>
+  <div class="err-inline" id="saveErr"></div>
+
+  <div class="save-result" id="saveResult">
+    <p>&#10003; Documents saved successfully</p>
+    <ul id="savedPaths"></ul>
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button onclick="openTailoredFolder()"
+              style="background:transparent;border:1px solid var(--ok);
+                     color:var(--ok);border-radius:6px;padding:8px 14px;
+                     font-size:12px;cursor:pointer;font-weight:700;
+                     font-family:var(--font);">
+        Open Tailored CVs Folder
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Step 3: Application guidance -->
+<div class="step-block" id="step3">
+  <div class="step-title">
+    <span class="step-num">3</span>
+    Complete the application form
+  </div>
+
+  <div class="attach-notice">
+    &#128204;&nbsp;
+    <strong>Remember to attach your documents</strong> when the application
+    form asks for a CV or cover letter. Your files are saved at:<br>
+    <span style="font-family:monospace;font-size:11px;color:var(--fg2);">
+      CV: {{ cv_save_path }}<br>
+      Cover Letter: {{ cl_save_path }}
+    </span>
+  </div>
+
+  {% set has_details = cfg.get("full_name") or cfg.get("email") or cfg.get("phone") %}
+  {% if has_details %}
+  <p style="color:var(--mut);font-size:13px;margin-bottom:10px;">
+    Click any row to copy it to your clipboard.
+  </p>
+  {% for label, key in [
+    ("Full Name","full_name"),("Email","email"),("Phone","phone"),
+    ("Location","location"),("Target Role","role_title"),
+    ("Salary","salary_range"),("Work Type","work_type")] %}
+  {% if cfg.get(key) %}
+  <div class="profile-row" onclick="copyField('{{ cfg.get(key)|e }}',this)">
+    <span class="pk2">{{ label }}</span>
+    <span class="pv2">{{ cfg.get(key) }}</span>
+    <span class="ctag">copy</span>
+  </div>
+  {% endif %}
+  {% endfor %}
+  {% else %}
+  <p style="color:var(--mut);font-size:13px;line-height:1.6;">
+    Use your <strong style="color:var(--fg);">tailored CV and cover letter</strong>
+    to fill in the application. Keep them open alongside the form for easy reference.
+  </p>
+  {% endif %}
+</div>
+
+<!-- Step 4: Open application -->
+<div class="step-block" id="step4">
+  <div class="step-title">
+    <span class="step-num" style="background:linear-gradient(135deg,var(--ok),#16a34a);
+      box-shadow:0 2px 8px rgba(34,197,94,.3);">4</span>
+    Open the Application Form
+  </div>
+  <p style="color:var(--mut);font-size:13px;line-height:1.6;margin-bottom:16px;">
+    When your CV and cover letter are ready, open the application in a new tab.
+    Fill in the form, <strong style="color:var(--fg);">attach your tailored CV
+    and cover letter</strong>, review everything, then submit.
+    <br><br>
+    <strong style="color:var(--fg);">AJAS never submits on your behalf —
+    you are always in control.</strong>
+  </p>
+  <form method="POST" action="/apply/open" id="applyForm">
+    <input type="hidden" name="job_url" value="{{ job_url }}">
+    <input type="hidden" name="title"   value="{{ title }}">
+    <input type="hidden" name="company" value="{{ company }}">
+    <button class="btn" type="button"
+            onclick="openApplication()"
+            style="background:linear-gradient(135deg,var(--ok),#16a34a);
+                   box-shadow:0 2px 12px rgba(34,197,94,.3);">
+      Open Application Form &rarr;
+    </button>
+  </form>
+</div>
+
+<a href="/search/results" class="btn-back">&larr; Back to Job Results</a>
+{% endblock %}
+{% block scripts %}
+<script>
+function copyPrompt() {
+  const text = document.getElementById("claudePrompt").innerText;
+  const btn  = document.getElementById("copyBtn");
+  navigator.clipboard.writeText(text).then(() => {
+    btn.innerHTML = "&#10003; Copied!";
+    btn.classList.add("done");
+    document.getElementById("step2").classList.add("active");
+    setTimeout(() => {
+      btn.innerHTML = "&#128203; Copy Prompt";
+      btn.classList.remove("done");
+    }, 3000);
+  }).catch(() => {
+    alert("Please select all the text in the box (Cmd+A on Mac, Ctrl+A on Windows) and copy manually.");
+  });
+}
+
+async function saveDocs() {
+  const cv   = document.getElementById("cvText").value.trim();
+  const cl   = document.getElementById("clText").value.trim();
+  const err  = document.getElementById("saveErr");
+  const btn  = document.getElementById("saveBtn");
+  const res  = document.getElementById("saveResult");
+
+  if (!cv && !cl) {
+    err.textContent = "Please paste at least one document before saving.";
+    err.classList.add("show");
+    return;
+  }
+  err.classList.remove("show");
+  btn.textContent = "Saving...";
+  btn.disabled = true;
+
+  try {
+    const fd = new FormData();
+    fd.append("cv_text",  cv);
+    fd.append("cl_text",  cl);
+    fd.append("title",   "{{ title|e }}");
+    fd.append("company", "{{ company|e }}");
+
+    const r = await fetch("/apply/save_docs", {method:"POST", body:fd});
+    const d = await r.json();
+
+    if (d.error) {
+      err.textContent = d.error;
+      err.classList.add("show");
+    } else {
+      const ul = document.getElementById("savedPaths");
+      ul.innerHTML = "";
+      d.saved.forEach(([name, path]) => {
+        const li = document.createElement("li");
+        li.textContent = name + ": " + path;
+        ul.appendChild(li);
+      });
+      res.classList.add("show");
+      document.getElementById("step3").classList.add("active");
+      document.getElementById("step4").classList.add("active");
+    }
+  } catch(e) {
+    err.textContent = "Save failed. Please try again.";
+    err.classList.add("show");
+  }
+
+  btn.innerHTML = "&#128190; Save as Word Documents";
+  btn.disabled = false;
+}
+
+function openTailoredFolder() {
+  fetch("/apply/open_tailored_folder").catch(()=>{});
+}
+
+function openApplication() {
+  // Step 1: open job URL in a new tab
+  var jobUrl = document.querySelector('[name="job_url"]').value;
+  if (jobUrl) {
+    window.open(jobUrl, "_blank");
+  }
+  // Step 2: submit form to current tab (navigates to confirm page)
+  setTimeout(function() {
+    document.getElementById("applyForm").submit();
+  }, 300);
+}
+
+function copyField(text, row) {
+  navigator.clipboard.writeText(text).then(() => {
+    const tag = row.querySelector(".ctag");
+    if (tag) {
+      tag.textContent = "copied!";
+      setTimeout(() => tag.textContent = "copy", 1500);
+    }
+  }).catch(() => {});
+}
+</script>
+{% endblock %}

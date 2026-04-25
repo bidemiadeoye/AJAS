@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Connect Claude AI</h2>
+<div class="sub">Follow these steps to activate your AJAS AI assistant.</div>
+
+{% if error %}
+<div class="err-box">{{ error }}</div>
+{% endif %}
+
+<!-- Step 1 -->
+<div class="step">
+  <span class="step-n">1</span>
+  <div class="step-t">
+    <strong>Create a Claude account and Project</strong>
+    <span>
+      Go to claude.ai to sign up for a free account if you do not already
+      have one. Sign in, click <strong>Projects</strong> in the left sidebar,
+      and create a <strong>New Project</strong>.
+      Name it something like <em>AJAS Job Search</em>.
+    </span>
+  </div>
+</div>
+
+<!-- Step 2 -->
+<div class="step">
+  <span class="step-n">2</span>
+  <div class="step-t">
+    <strong>Paste your AJAS instructions into the Project</strong>
+    <span>
+      In your Claude Project, find the <strong>Project Instructions</strong>
+      field (usually at the top or in Settings).
+      Click <strong>View Instructions</strong> below — it opens in your browser.
+      Select all the text
+      (<strong>Cmd+A</strong> on Mac &bull; <strong>Ctrl+A</strong> on Windows),
+      copy it, then paste it into the Project Instructions field and save.
+    </span>
+  </div>
+</div>
+
+<!-- Step 3 -->
+<div class="step">
+  <span class="step-n">3</span>
+  <div class="step-t">
+    <strong>Upload your CV to the Project</strong>
+    <span>
+      In your Claude Project, find the
+      <strong>Files</strong> or <strong>Attachments</strong> section
+      (usually a paperclip icon or &ldquo;Add files&rdquo; button).
+      Upload your CV file from:<br>
+      <span style="font-family:monospace;font-size:11px;color:var(--acc2);">
+        {{ cfg.get('cv_path', 'Your AJAS folder &rsaquo; My CV') }}
+      </span><br>
+      This lets Claude read your CV every time you start a conversation.
+    </span>
+  </div>
+</div>
+
+<!-- Step 4 -->
+<div class="step">
+  <span class="step-n">4</span>
+  <div class="step-t">
+    <strong>Copy your Claude Project URL</strong>
+    <span>
+      Once your Project is created, copy its URL from your browser address bar.
+      It will look like:
+      <span style="font-family:monospace;font-size:11px;
+                   color:var(--acc2);">https://claude.ai/project/...</span><br>
+      Paste it below. AJAS uses this to open your Project directly every time.
+      <strong style="color:var(--fg);">This field is required.</strong>
+    </span>
+  </div>
+</div>
+
+<div class="row">
+  <a href="https://claude.ai" target="_blank" class="btn">
+    Open Claude &rarr;
+  </a>
+  <a href="/instructions/view" target="_blank" class="btn btn-ghost">
+    View Instructions
+  </a>
+</div>
+
+<div class="card" style="margin-top:18px;">
+  <div class="card-label">Paste your Claude Project URL</div>
+  <form method="POST" action="/connect">
+    <label style="margin-top:0;">Claude Project URL (required)</label>
+    <input type="url" name="project_url"
+           placeholder="https://claude.ai/project/..."
+           value="{{ cfg.get('claude_project_url','') }}"
+           required>
+    <p style="color:var(--mut);font-size:12px;margin-top:8px;">
+      You will not be able to proceed without this.
+      The URL is saved on your computer only.
+    </p>
+    <button class="btn" type="submit" style="margin-top:14px;">
+      Finish Setup &rarr;
+    </button>
+  </form>
+</div>
+
+<a href="/back/connect" class="btn-back">&larr; Back to Job Preferences</a>
+{% endblock %}

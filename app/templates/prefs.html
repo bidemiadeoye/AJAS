@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Step 3 of 3 &mdash; Job Preferences</h2>
+<div class="sub">Tell AJAS what kind of role you are looking for.</div>
+{% if error %}<div class="err-box">{{ error }}</div>{% endif %}
+<form method="POST" action="/prefs">
+  <div class="card">
+    <label>Target Role Title</label>
+    <input type="text" name="role_title" placeholder="e.g. Data Analyst"
+           value="{{ cfg.get('role_title','') }}">
+    <label>Preferred Location</label>
+    <input type="text" name="location" placeholder="e.g. London, UK  or  Remote"
+           value="{{ cfg.get('location','') }}">
+    <label>Salary Range</label>
+    <input type="text" name="salary_range" placeholder="e.g. 50000-70000"
+           value="{{ cfg.get('salary_range','') }}">
+    <label>Work Type</label>
+    <select name="work_type">
+      {% for o in ["Any","Remote","Hybrid","Onsite"] %}
+      <option value="{{ o }}" {% if cfg.get('work_type','Any')==o %}selected{% endif %}>{{ o }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="btn" type="submit">Save &amp; Continue &rarr;</button>
+</form>
+<a href="/back/prefs" class="btn-back">&larr; Back to Your CV</a>
+{% endblock %}

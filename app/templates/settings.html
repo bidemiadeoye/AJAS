@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Settings</h2>
+<div class="sub">Update your API keys and system configuration.</div>
+
+{% if msg %}
+<div class="ok-box">&#10003; {{ msg }}</div>
+{% endif %}
+
+<!-- Job Search API Key -->
+<div class="card">
+  <div class="card-label">Job Search API Key (RapidAPI / JSearch)</div>
+  <p style="color:var(--fg2);font-size:13px;line-height:1.6;margin-bottom:14px;">
+    AJAS uses JSearch via RapidAPI to find live job openings worldwide.
+    Each user needs their own free API key.
+    If your key has changed or stopped working, update it here.
+  </p>
+
+  {% if cfg.get('jsearch_key') %}
+  <div class="ok-box" style="margin-bottom:12px;">
+    &#10003; API key is set.
+    Current key ends in:
+    <strong style="font-family:monospace;">
+      ...{{ cfg.get('jsearch_key','')[-6:] }}
+    </strong>
+  </div>
+  {% else %}
+  <div class="err-box" style="margin-bottom:12px;">
+    No API key set. Job search will not work until you add one.
+  </div>
+  {% endif %}
+
+  <form method="POST" action="/settings">
+    <input type="hidden" name="action" value="update_api">
+    <label style="margin-top:0;">New RapidAPI Key</label>
+    <input type="text" name="jsearch_key"
+           placeholder="Paste your X-RapidAPI-Key here"
+           autocomplete="off" spellcheck="false">
+    <p style="color:var(--mut);font-size:12px;margin-top:8px;">
+      Get a free key at
+      <a href="https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch"
+         target="_blank" style="color:var(--acc2);">
+        rapidapi.com/jsearch &rarr;
+      </a>
+      (free plan: 200 searches/month)
+    </p>
+    <button class="btn" type="submit" style="margin-top:12px;">
+      Save API Key
+    </button>
+  </form>
+
+  {% if cfg.get('jsearch_key') %}
+  <form method="POST" action="/settings" style="margin-top:8px;">
+    <input type="hidden" name="action" value="clear_api">
+    <button class="btn btn-ghost" type="submit"
+            style="margin-top:0;font-size:13px;padding:10px;">
+      Clear API Key
+    </button>
+  </form>
+  {% endif %}
+</div>
+
+<!-- Claude Project URL -->
+<div class="card">
+  <div class="card-label">Claude Project URL</div>
+  <p style="color:var(--fg2);font-size:13px;line-height:1.6;margin-bottom:14px;">
+    The URL of your Claude Project. AJAS opens this when you click
+    "Open My Claude Project". Update it here if your Project URL changes.
+  </p>
+  {% if cfg.get('claude_project_url') %}
+  <div class="path" style="margin-bottom:12px;">
+    {{ cfg.get('claude_project_url') }}
+  </div>
+  {% endif %}
+  <form method="POST" action="/settings">
+    <input type="hidden" name="action" value="update_api">
+    <input type="hidden" name="jsearch_key"
+           value="{{ cfg.get('jsearch_key','') }}">
+    <label style="margin-top:0;">Claude Project URL</label>
+    <input type="url" name="claude_url"
+           placeholder="https://claude.ai/project/..."
+           value="{{ cfg.get('claude_project_url','') }}">
+    <button class="btn" type="submit" style="margin-top:12px;">
+      Save URL
+    </button>
+  </form>
+</div>
+
+<!-- Current Configuration Summary -->
+<div class="card">
+  <div class="card-label">Current Configuration</div>
+  {% for label, key in [
+    ("AJAS Folder",     "app_dir"),
+    ("CV File",         "cv_filename"),
+    ("Target Role",     "role_title"),
+    ("Location",        "location"),
+    ("Salary Range",    "salary_range"),
+    ("Work Type",       "work_type"),
+    ("Claude Project",  "claude_project_url"),
+  ] %}
+  <div class="prow">
+    <span class="pk">{{ label }}</span>
+    <span class="pv" style="word-break:break-all;font-size:12px;">
+      {{ cfg.get(key, '—') }}
+    </span>
+  </div>
+  {% endfor %}
+</div>
+
+<a href="/dashboard" class="btn-back">&larr; Back to Dashboard</a>
+{% endblock %}

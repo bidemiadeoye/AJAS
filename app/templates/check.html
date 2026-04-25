@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>System Check</h2>
+<div class="sub">Checking your system before setup.</div>
+<div class="card">
+  <div class="chk">
+    <span class="chk-key">Python version</span>
+    <span class="chk-val {% if py_ok %}ok{% else %}err{% endif %}">
+      {% if py_ok %}&#10003; Python {{ ver }} — Ready
+      {% else %}&#10007; Python {{ ver }} — version 3.9+ required{% endif %}
+    </span>
+  </div>
+  <div class="chk">
+    <span class="chk-key">Required libraries</span>
+    <span class="chk-val {% if deps_ok %}ok{% else %}warn{% endif %}">
+      {% if deps_ok %}&#10003; All installed
+      {% else %}&#9888; Missing: {{ missing|join(", ") }} — will auto-install{% endif %}
+    </span>
+  </div>
+  <div class="chk">
+    <span class="chk-key">Claude account</span>
+    <span class="chk-val mut">&#8505; Free account at claude.ai required</span>
+  </div>
+</div>
+{% if not py_ok %}
+  <div class="err-box">Please install Python 3.9+ then relaunch AJAS.</div>
+  <div class="row">
+    <a href="https://python.org/downloads" target="_blank" class="btn">Download Python</a>
+    <a href="/check" class="btn btn-ghost">Check Again</a>
+  </div>
+{% else %}
+  <form method="POST" action="/check/install">
+    <button class="btn" type="submit">Continue &rarr;</button>
+  </form>
+{% endif %}
+{% endblock %}

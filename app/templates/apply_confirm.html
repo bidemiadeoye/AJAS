@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+.checkbox-card{background:var(--card);border:2px solid var(--acc);
+  border-radius:10px;padding:18px 20px;margin-bottom:12px;}
+.checkbox-row{display:flex;align-items:flex-start;gap:16px;cursor:pointer;}
+/* Real checkbox - visible and clickable */
+.checkbox-row{cursor:pointer;}
+.checkbox-row input[type=checkbox]{
+  width:24px;height:24px;flex-shrink:0;
+  cursor:pointer;margin-top:2px;
+  accent-color:var(--acc);
+  outline:3px solid var(--acc);
+  outline-offset:2px;
+  border-radius:5px;
+}
+.checkbox-label{font-size:14px;line-height:1.6;color:var(--fg);}
+.checkbox-label span{color:var(--mut);font-size:12px;display:block;margin-top:3px;}
+.notice{background:var(--bg);border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;font-size:12px;color:var(--mut);margin-top:10px;line-height:1.6;}
+.status-badge{display:inline-block;padding:3px 10px;border-radius:4px;
+  font-size:12px;font-weight:700;}
+.status-Applied{background:#0f2a1a;color:var(--ok);}
+.status-Screening{background:#1a1f2a;color:#60a5fa;}
+.status-Interview{background:#1a2a1a;color:#a3e635;}
+.status-Assessment{background:#2a1a1a;color:#fb923c;}
+.status-Final{background:#1a1a2a;color:#c084fc;}
+.status-Offer{background:#0a2a0a;color:#4ade80;}
+.status-Rejected{background:#2a0a0a;color:var(--err);}
+.status-Withdrawn{background:#1a1a1a;color:var(--mut);}
+</style>
+{% endblock %}
+{% block content %}
+{% if fresh %}
+<h2>Application Opened</h2>
+<div class="sub">The application form has been opened in a new tab.</div>
+{% else %}
+<h2>Application — {{ title }}</h2>
+<div class="sub">{{ company }}</div>
+{% endif %}
+
+<div class="card" style="text-align:center;padding:22px 20px;">
+  <div style="font-size:34px;margin-bottom:8px;">
+    {% if fresh %}&#127881;{% else %}&#128202;{% endif %}
+  </div>
+  <p style="font-size:15px;font-weight:700;color:var(--fg);margin-bottom:4px;">
+    {{ title }}
+  </p>
+  <p style="color:var(--mut);font-size:13px;">{{ company }}</p>
+  {% if request.args.get('new_status') %}
+  <div style="margin-top:10px;">
+    <span class="status-badge {{ request.args.get('new_status','').replace(' ','') }}">
+      {{ request.args.get('new_status') }}
+    </span>
+  </div>
+  {% endif %}
+</div>
+
+{% if logged %}
+<!-- Already logged — show status update option -->
+<div class="card" style="border-color:var(--ok);">
+  <div class="card-label" style="color:var(--ok);">
+    &#10003; Logged in your Application Tracker
+  </div>
+  <p style="color:var(--mut);font-size:13px;line-height:1.6;margin-bottom:12px;">
+    Saved to: <span style="font-size:11px;color:var(--acc);word-break:break-all;">
+    {{ tracker_file }}</span>
+  </p>
+  <button onclick="openTracker()"
+          style="background:transparent;border:1px solid var(--ok);
+                 color:var(--ok);border-radius:6px;padding:8px 16px;
+                 font-size:13px;cursor:pointer;font-weight:700;">
+    Open Application Tracker
+  </button>
+</div>
+
+<!-- Status update section — always available after logging -->
+<div class="card">
+  <div class="card-label">Update Application Status</div>
+  <p style="color:var(--mut);font-size:13px;line-height:1.6;margin-bottom:14px;">
+    As your application progresses, update the status here.
+    The tracker will be updated automatically.
+  </p>
+  <form method="POST" action="/tracker/update" id="statusForm">
+    <input type="hidden" name="title"   value="{{ title }}">
+    <input type="hidden" name="company" value="{{ company }}">
+    <input type="hidden" name="source"  value="confirm">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <label style="margin-top:0;">New Status</label>
+        <select name="status" id="statusSelect" onchange="checkStatus()">
+          <option value="">Select status...</option>
+          <option value="Applied">Applied</option>
+          <option value="Screening">Screening Call</option>
+          <option value="Interview">Interview</option>
+          <option value="Assessment">Assessment / Test</option>
+          <option value="Final Round">Final Round</option>
+          <option value="Offer">Offer Received</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Withdrawn">Withdrawn</option>
+        </select>
+      </div>
+      <div>
+        <label style="margin-top:0;">Date</label>
+        <input type="date" name="status_date" id="statusDate"
+               value="{{ today }}">
+      </div>
+    </div>
+    <label>Notes (optional)</label>
+    <input type="text" name="notes"
+           placeholder="e.g. Phone screen scheduled for Monday">
+    <button class="btn" type="submit" id="statusBtn"
+            disabled style="opacity:.4;cursor:not-allowed;">
+      Update Status in Tracker
+    </button>
+  </form>
+  <div id="statusUpdated" style="display:none;" class="notice"
+       style="color:var(--ok);">
+    &#10003; Tracker updated successfully.
+  </div>
+</div>
+
+{% else %}
+<!-- Not yet logged — show confirmation checkbox first -->
+<div class="checkbox-card">
+  <p style="font-size:13px;color:var(--mut);margin-bottom:14px;line-height:1.6;">
+    Complete the application in the tab that just opened, then return here.
+    <strong style="color:var(--fg);">Only confirmed applications are logged
+    to your tracker.</strong>
+  </p>
+  <label class="checkbox-row">
+    <input type="checkbox" id="appliedCheck" onchange="toggleLogBtn()">
+    <span class="checkbox-label">
+      I have completed and submitted my application for
+      <strong>{{ title }}</strong> at <strong>{{ company }}</strong>
+      <span>Tick this only after you have actually submitted the form.</span>
+    </span>
+  </label>
+  <div class="notice">
+    &#128274; Only applications you confirm here will be added to your
+    tracker — keeping your records accurate.
+  </div>
+</div>
+
+<form method="POST" action="/apply/log">
+  <input type="hidden" name="title"   value="{{ title }}">
+  <input type="hidden" name="company" value="{{ company }}">
+  <input type="hidden" name="job_url" value="{{ job_url }}">
+  <label style="margin-top:0;">Notes (optional)</label>
+  <input type="text" name="notes"
+         placeholder="e.g. Applied via company portal, referral from contact"
+         style="margin-bottom:14px;">
+  <button class="btn" type="submit" id="logBtn"
+          disabled style="opacity:.4;cursor:not-allowed;">
+    &#128203; Log This Application in Tracker
+  </button>
+</form>
+{% endif %}
+
+<div class="card" style="margin-top:4px;">
+  <div class="card-label">What to do next</div>
+  <div style="font-size:13px;color:var(--mut);line-height:1.9;">
+    <div style="padding:4px 0;border-bottom:1px solid var(--border);">
+      &#9744;&nbsp;<strong style="color:var(--fg);">Check your email</strong>
+      — watch for a confirmation or next steps from {{ company }}
+    </div>
+    <div style="padding:4px 0;border-bottom:1px solid var(--border);">
+      &#9744;&nbsp;<strong style="color:var(--fg);">Follow up</strong>
+      — if no response in 5-7 business days, a brief follow-up is appropriate
+    </div>
+    <div style="padding:4px 0;border-bottom:1px solid var(--border);">
+      &#9744;&nbsp;<strong style="color:var(--fg);">Update your status</strong>
+      — use the dropdown above as things progress
+    </div>
+    <div style="padding:4px 0;">
+      &#9744;&nbsp;<strong style="color:var(--fg);">Keep applying</strong>
+      — multiple applications maximise your chances
+    </div>
+  </div>
+</div>
+
+<a href="/search/results" class="btn">&#128269; Back to Job Results</a>
+<a href="/tracker" class="btn btn-ghost" style="margin-top:8px;">
+  &#128202; View All Applications
+</a>
+<a href="/dashboard" class="btn-back">&larr; Back to Dashboard</a>
+{% endblock %}
+{% block scripts %}
+<script>
+// Set today's date as default
+document.addEventListener("DOMContentLoaded", function() {
+  const d = document.getElementById("statusDate");
+  if (d && !d.value) {
+    d.value = new Date().toISOString().split("T")[0];
+  }
+});
+
+function toggleLogBtn() {
+  const checked = document.getElementById("appliedCheck").checked;
+  const btn     = document.getElementById("logBtn");
+  if (btn) {
+    btn.disabled      = !checked;
+    btn.style.opacity = checked ? "1" : "0.4";
+    btn.style.cursor  = checked ? "pointer" : "not-allowed";
+  }
+}
+
+function checkStatus() {
+  const val = document.getElementById("statusSelect").value;
+  const btn = document.getElementById("statusBtn");
+  if (btn) {
+    btn.disabled      = !val;
+    btn.style.opacity = val ? "1" : "0.4";
+    btn.style.cursor  = val ? "pointer" : "not-allowed";
+  }
+}
+
+function openTracker() {
+  fetch("/apply/open_tracker").catch(()=>{});
+}
+</script>
+{% endblock %}

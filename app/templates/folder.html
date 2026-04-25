@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Step 1 of 3 &mdash; Files Location</h2>
+<div class="sub">Choose where AJAS will save your CVs, job lists, and application files.</div>
+{% if error %}<div class="err-box">{{ error }}</div>{% endif %}
+<form method="POST" action="/folder/confirm" id="folderForm">
+  <div class="card">
+    <div class="card-label">Folder Location</div>
+    <input type="text" name="folder_path" id="folderPath"
+           value="{{ default }}" readonly style="cursor:pointer;">
+    <div class="path" id="pathDisplay">{{ default }}</div>
+    <div class="row" style="margin-top:12px;">
+      <button type="button" class="btn btn-ghost"
+              id="browseBtn" onclick="browseFolders()" style="margin-top:0;">
+        &#128193; Browse &amp; Choose Folder
+      </button>
+    </div>
+    <p style="color:var(--mut);font-size:12px;margin-top:10px;">
+      Click Browse to choose any folder. AJAS will create its folders inside it.
+    </p>
+  </div>
+  <button class="btn" type="submit">Create Folder &amp; Continue &rarr;</button>
+</form>
+<a href="/back/folder" class="btn-back">&larr; Back to Welcome</a>
+{% endblock %}
+{% block scripts %}
+<script>
+async function browseFolders() {
+  const btn = document.getElementById("browseBtn");
+  btn.textContent = "Opening folder picker...";
+  btn.disabled = true;
+  try {
+    const r = await fetch("/folder/browse", {method:"POST"});
+    const d = await r.json();
+    if (d.path) {
+      document.getElementById("folderPath").value = d.path;
+      document.getElementById("pathDisplay").textContent = d.path;
+    }
+  } catch(e) {}
+  btn.innerHTML = "&#128193; Browse &amp; Choose Folder";
+  btn.disabled = false;
+}
+</script>
+{% endblock %}

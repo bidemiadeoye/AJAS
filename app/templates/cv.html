@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Step 2 of 3 &mdash; Your CV</h2>
+<div class="sub">Upload your CV. It will be copied into your AJAS folder.</div>
+{% if error %}<div class="err-box">{{ error }}</div>{% endif %}
+{% if cv %}
+  <div class="ok-box">&#10003; CV ready: <strong>{{ cv }}</strong></div>
+  <a href="/prefs" class="btn">Next: Job Preferences &rarr;</a>
+  <a href="/cv/refresh" class="btn btn-ghost" style="margin-top:8px;">Upload a different CV</a>
+{% else %}
+  <form method="POST" action="/cv/upload" enctype="multipart/form-data" id="cvForm">
+    <label for="cv_input" class="upload">
+      <div class="ico">&#128196;</div>
+      <p><strong>Click here to select your CV file</strong></p>
+      <p>Accepts .docx and .pdf</p>
+      <input type="file" id="cv_input" name="cv_file"
+             accept=".docx,.pdf,.doc"
+             onchange="document.getElementById('cvForm').submit()">
+    </label>
+  </form>
+  <div class="card" style="margin-top:4px;">
+    <div class="card-label">Or place your CV in this folder manually</div>
+    <div class="path">{{ cv_dir }}</div>
+    <div class="row" style="margin-top:10px;">
+      <a href="/cv/open_folder" class="btn btn-ghost" style="margin-top:0;">Open Folder</a>
+      <a href="/cv/refresh" class="btn btn-ghost" style="margin-top:0;">Refresh</a>
+    </div>
+  </div>
+{% endif %}
+<a href="/back/cv" class="btn-back">&larr; Back to Files Location</a>
+{% endblock %}

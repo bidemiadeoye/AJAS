@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+/* ── Job cards ── */
+.job-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:18px 20px;margin-bottom:10px;
+  transition:border-color .2s,transform .15s;
+}
+.job-card:hover{border-color:var(--border2);transform:translateY(-1px);}
+.job-card.applied{border-color:var(--ok);opacity:.72;}
+.job-title{font-size:15px;font-weight:700;margin-bottom:5px;color:var(--fg);}
+.job-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.tag{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:5px;font-size:11px;padding:2px 9px;color:var(--mut);
+}
+.tag.green{border-color:var(--ok);color:var(--ok);}
+.job-desc{
+  font-size:12px;color:var(--mut);line-height:1.6;
+  margin-bottom:6px;max-height:72px;overflow:hidden;
+  transition:max-height .35s ease;
+}
+.job-desc.expanded{max-height:9999px;}
+.show-more{
+  font-size:11px;color:var(--acc2);cursor:pointer;
+  background:none;border:none;padding:0;margin-bottom:10px;
+  display:block;font-family:var(--font);
+}
+.show-more:hover{color:var(--acc);}
+
+/* ── Result info bar ── */
+.result-info{
+  background:var(--ok-bg);border:1px solid var(--ok);
+  border-radius:var(--radius-s);padding:12px 16px;
+  margin-bottom:16px;font-size:13px;line-height:1.7;
+}
+.result-info strong{color:var(--ok);}
+
+/* ── Search summary ── */
+.ss{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px 20px;margin-bottom:20px;
+}
+.ss-row{display:flex;flex-wrap:wrap;gap:20px;}
+.ss-item{display:flex;flex-direction:column;}
+.ss-item span:first-child{
+  font-size:10px;font-weight:700;color:var(--mut);
+  text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px;
+}
+.ss-item span:last-child{font-size:14px;font-weight:600;color:var(--fg);}
+
+/* ── Spinner ── */
+.spinner-wrap{display:none;text-align:center;padding:52px 20px;}
+.spinner-wrap.on{display:block;}
+.spin{
+  display:inline-block;width:36px;height:36px;
+  border:3px solid var(--border2);border-top-color:var(--acc);
+  border-radius:50%;animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── Pagination ── */
+.pagination{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 18px;
+  margin-bottom:14px;
+}
+.page-info{
+  font-size:13px;color:var(--mut);text-align:center;flex:1;
+}
+.page-info strong{color:var(--fg);}
+.page-btn{
+  background:transparent;border:1px solid var(--border2);
+  color:var(--fg2);border-radius:var(--radius-s);
+  padding:8px 18px;font-size:13px;font-weight:700;
+  cursor:pointer;transition:all .15s;font-family:var(--font);
+  display:flex;align-items:center;gap:6px;
+}
+.page-btn:hover:not(:disabled){
+  border-color:var(--acc);color:var(--fg);
+  background:var(--acc-glow);
+}
+.page-btn:disabled{opacity:.3;cursor:not-allowed;}
+.page-dots{
+  display:flex;gap:4px;align-items:center;
+  justify-content:center;margin-top:4px;
+}
+.page-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--border2);cursor:pointer;
+  transition:background .15s,transform .15s;
+}
+.page-dot.active{background:var(--acc);transform:scale(1.2);}
+.page-dot:hover{background:var(--acc2);}
+</style>
+{% endblock %}
+
+{% block content %}
+<h2>Search for Jobs</h2>
+<div class="sub">Live openings based on your saved preferences.</div>
+
+<!-- Preferences summary -->
+<div class="ss">
+  <div class="ss-row">
+    <div class="ss-item">
+      <span>Role</span>
+      <span>{{ cfg.get('role_title','—') }}</span>
+    </div>
+    <div class="ss-item">
+      <span>Location</span>
+      <span>{{ cfg.get('location','') or 'Global' }}</span>
+    </div>
+    <div class="ss-item">
+      <span>Salary</span>
+      <span>{{ cfg.get('salary_range','') or 'Any' }}</span>
+    </div>
+    <div class="ss-item">
+      <span>Work Type</span>
+      <span>{{ cfg.get('work_type','Any') }}</span>
+    </div>
+  </div>
+  <p style="color:var(--mut);font-size:12px;margin-top:12px;">
+    To change these, go back to the dashboard and click
+    <strong>Update Job Preferences</strong>.
+  </p>
+</div>
+
+<!-- Search trigger (only shown before first search) -->
+{% if not searched %}
+<form method="POST" action="/search/run" id="sf" onsubmit="startSearch()">
+  <input type="hidden" name="role"      value="{{ cfg.get('role_title','') }}">
+  <input type="hidden" name="location"  value="{{ cfg.get('location','') }}">
+  <input type="hidden" name="salary"    value="{{ cfg.get('salary_range','') }}">
+  <input type="hidden" name="work_type" value="{{ cfg.get('work_type','Any') }}">
+  <button class="btn" type="submit" id="sbtn">
+    &#128269; Search Jobs Now &rarr;
+  </button>
+</form>
+<div class="spinner-wrap" id="sw">
+  <div class="spin"></div>
+  <p style="color:var(--mut);font-size:13px;margin-top:14px;">
+    Searching for live openings&hellip;<br>
+    <span style="font-size:11px;">
+      Gathering up to 100 results — this takes up to 30 seconds.
+    </span>
+  </p>
+</div>
+{% endif %}
+
+{% if error %}
+<div class="err-box" style="margin-top:14px;">{{ error }}</div>
+{% endif %}
+
+{% if searched and jobs is not none %}
+  {% if jobs %}
+
+    <!-- Result info bar -->
+    <div class="result-info">
+      <strong>&#10003; {{ jobs|length }} live opening{% if jobs|length != 1 %}s{% endif %} found.</strong><br>
+      Your job list has been saved to:<br>
+      <span style="font-size:11px;color:var(--mut);word-break:break-all;
+                   font-family:monospace;">{{ jobs_file }}</span><br>
+      <a href="/search/open_file"
+         style="color:var(--acc2);font-size:12px;font-weight:600;">
+        Open Excel job list &rarr;
+      </a>
+    </div>
+
+    <!-- Pagination bar (top) -->
+    <div class="pagination" id="paginationTop">
+      <button class="page-btn" id="prevBtnTop" onclick="changePage(-1)" disabled>
+        &larr; Previous
+      </button>
+      <div class="page-info">
+        Showing <strong id="pageInfoTop">1&ndash;10</strong>
+        of <strong>{{ jobs|length }}</strong>
+        <div class="page-dots" id="dotsTop"></div>
+      </div>
+      <button class="page-btn" id="nextBtnTop" onclick="changePage(1)">
+        Next &rarr;
+      </button>
+    </div>
+
+    <!-- All job cards (JS will show/hide pages) -->
+    <div id="jobList">
+    {% for job in jobs %}
+    <div class="job-card {% if job.status == 'Applied' %}applied{% endif %}"
+         data-index="{{ loop.index0 }}">
+      <div class="job-title">{{ job.title }}</div>
+      <div class="job-meta">
+        {% if job.company %}
+        <span class="tag">&#127970; {{ job.company }}</span>{% endif %}
+        {% if job.location %}
+        <span class="tag">&#128205; {{ job.location }}</span>{% endif %}
+        {% if job.salary %}
+        <span class="tag">&#128176; {{ job.salary }}</span>{% endif %}
+        {% if job.posted %}
+        <span class="tag">&#128197; {{ job.posted }}</span>{% endif %}
+        <span class="tag">{{ job.work_type }}</span>
+        {% if job.status == 'Applied' %}
+        <span class="tag green">&#10003; Applied</span>{% endif %}
+      </div>
+      {% if job.description %}
+      <div class="job-desc" id="d{{ loop.index }}">{{ job.description }}</div>
+      <button class="show-more" onclick="tog('d{{ loop.index }}',this)">
+        Show full description &#9660;
+      </button>
+      {% endif %}
+      {% if job.status != 'Applied' %}
+      <a href="/apply/{{ job.url|urlencode }}?title={{ job.title|urlencode }}&company={{ job.company|urlencode }}&desc={{ job.description|urlencode }}"
+         class="btn"
+         style="padding:8px 16px;font-size:13px;margin-top:4px;
+                width:auto;display:inline-block;">
+        Apply for this role &rarr;
+      </a>
+      {% else %}
+      <span style="color:var(--ok);font-size:13px;font-weight:600;">
+        &#10003; Already applied
+      </span>
+      {% endif %}
+    </div>
+    {% endfor %}
+    </div>
+
+    <!-- Pagination bar (bottom) -->
+    <div class="pagination" id="paginationBottom" style="margin-top:4px;">
+      <button class="page-btn" id="prevBtnBottom" onclick="changePage(-1)" disabled>
+        &larr; Previous
+      </button>
+      <div class="page-info">
+        Showing <strong id="pageInfoBottom">1&ndash;10</strong>
+        of <strong>{{ jobs|length }}</strong>
+        <div class="page-dots" id="dotsBottom"></div>
+      </div>
+      <button class="page-btn" id="nextBtnBottom" onclick="changePage(1)">
+        Next &rarr;
+      </button>
+    </div>
+
+    <!-- Refresh -->
+    <form method="POST" action="/search/run" style="margin-top:4px;"
+          onsubmit="startSearch()">
+      <input type="hidden" name="role"      value="{{ cfg.get('role_title','') }}">
+      <input type="hidden" name="location"  value="{{ cfg.get('location','') }}">
+      <input type="hidden" name="salary"    value="{{ cfg.get('salary_range','') }}">
+      <input type="hidden" name="work_type" value="{{ cfg.get('work_type','Any') }}">
+      <button class="btn btn-ghost" type="submit">&#128257; Refresh Results</button>
+    </form>
+
+  {% else %}
+    <div class="card" style="text-align:center;padding:40px;margin-top:16px;">
+      <div style="font-size:40px;margin-bottom:14px;">&#128269;</div>
+      <p style="color:var(--mut);">No jobs found for these search terms.</p>
+      <p style="color:var(--mut);font-size:13px;margin-top:6px;">
+        Try updating your role title or location in Job Preferences.
+      </p>
+    </div>
+  {% endif %}
+{% endif %}
+
+<a href="/dashboard" class="btn-back">&larr; Back to Dashboard</a>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Spinner ──────────────────────────────────────────────────────────────
+function startSearch() {
+  const btn = document.getElementById("sbtn");
+  const sw  = document.getElementById("sw");
+  if (btn) btn.style.display = "none";
+  if (sw)  sw.classList.add("on");
+}
+
+// ── Description toggle ───────────────────────────────────────────────────
+function tog(id, btn) {
+  const el = document.getElementById(id);
+  const ex = el.classList.toggle("expanded");
+  btn.innerHTML = ex ? "Show less &#9650;" : "Show full description &#9660;";
+}
+
+// ── Pagination ───────────────────────────────────────────────────────────
+const PAGE_SIZE = 10;
+let currentPage = 0;
+
+function init() {
+  const cards = document.querySelectorAll("#jobList .job-card");
+  if (!cards.length) return;
+
+  const totalPages = Math.ceil(cards.length / PAGE_SIZE);
+
+  // Build dots
+  ["dotsTop", "dotsBottom"].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = "";
+    for (let i = 0; i < totalPages; i++) {
+      const d = document.createElement("div");
+      d.className = "page-dot" + (i === 0 ? " active" : "");
+      d.onclick = (function(pg){ return function(){ goToPage(pg); }; })(i);
+      el.appendChild(d);
+    }
+  });
+
+  showPage(0);
+}
+
+function showPage(page) {
+  const cards      = document.querySelectorAll("#jobList .job-card");
+  const totalPages = Math.ceil(cards.length / PAGE_SIZE);
+  currentPage      = Math.max(0, Math.min(page, totalPages - 1));
+
+  const start = currentPage * PAGE_SIZE;
+  const end   = start + PAGE_SIZE;
+
+  // Show/hide cards
+  cards.forEach((card, i) => {
+    card.style.display = (i >= start && i < end) ? "" : "none";
+  });
+
+  // Update info text
+  const showing = `${start + 1}&ndash;${Math.min(end, cards.length)}`;
+  ["pageInfoTop", "pageInfoBottom"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = showing;
+  });
+
+  // Update buttons
+  const atStart = currentPage === 0;
+  const atEnd   = currentPage >= totalPages - 1;
+  ["prevBtnTop","prevBtnBottom"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = atStart;
+  });
+  ["nextBtnTop","nextBtnBottom"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = atEnd;
+  });
+
+  // Update dots
+  document.querySelectorAll(".page-dot").forEach((d, i) => {
+    d.classList.toggle("active", i === currentPage);
+  });
+
+  // Scroll to top of list smoothly
+  const top = document.getElementById("paginationTop");
+  if (top) top.scrollIntoView({behavior: "smooth", block: "start"});
+}
+
+function changePage(dir) {
+  showPage(currentPage + dir);
+}
+
+function goToPage(page) {
+  showPage(page);
+}
+
+// Initialise on load
+document.addEventListener("DOMContentLoaded", init);
+</script>
+{% endblock %}

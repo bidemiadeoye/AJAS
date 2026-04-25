@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Start a New Job Search?</h2>
+<div class="sub">This will clear your current job preferences so you can search for a different role.</div>
+<div class="card" style="border-color:var(--warn);">
+  <div class="card-label" style="color:var(--warn);">What will be cleared</div>
+  <div class="chk"><span class="warn">&#9888;</span><span>Role title, location, salary, and work type</span></div>
+</div>
+<div class="card">
+  <div class="card-label">What will be kept</div>
+  <div class="chk"><span class="ok">&#10003;</span><span>Your CV file and AJAS folders</span></div>
+  <div class="chk"><span class="ok">&#10003;</span><span>Your Claude Project URL</span></div>
+  <div class="chk"><span class="ok">&#10003;</span><span>All previously saved files</span></div>
+</div>
+<form method="POST" action="/dashboard/reset">
+  <button class="btn" type="submit"
+          style="background:var(--warn);border-color:var(--warn);">
+    Yes, Start New Search &rarr;
+  </button>
+</form>
+<a href="/dashboard" class="btn-back">&larr; Back to Dashboard</a>
+{% endblock %}
